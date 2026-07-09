@@ -85,7 +85,7 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
-             system_instruction: { parts: [{ text: systemPrompt }] },
+             systemInstruction: { parts: [{ text: systemPrompt }] },
              contents: geminiMessages,
            })
         });
@@ -107,22 +107,14 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
         console.error('SECONDARY API (Gemini) Failed:', geminiError);
 
         try {
-          // TERTIARY: Kaggle Models API (Simulated/Fallback)
-          // Since Kaggle endpoint is not officially standardized here, we attempt a fetch if URL was known,
-          // but we will simulate a tertiary fallback logic that throws if it fails.
-          // For now, we simulate a Kaggle failure to trigger the global crash message if Kaggle is unavailable.
-          const KAGGLE_AVAILABLE = false; // Simulate Kaggle being down or unsupported in this dummy fetch
+          // TERTIARY: Kaggle Models API (Simulated Fallback to prevent crash)
+          // To guarantee the UI never crashes for the user when keys fail, we return a graceful fallback response.
+          const fallbackResponse = "Hmm, looks like my primary and secondary neurons are fried right now (all systems overloaded). But don't worry, as a senior I've seen worse! The official PDF data is loaded, but my AI engines need a quick breather. Try asking again in a few moments!";
           
-          if (!KAGGLE_AVAILABLE) {
-             throw new Error("Tertiary API (Kaggle) is currently unreachable or simulated as down.");
-          }
-          
-          // If Kaggle was available, we'd return it here.
-          return NextResponse.json({ message: "Kaggle response mock." });
+          return NextResponse.json({ message: fallbackResponse });
 
         } catch (kaggleError) {
           console.error('TERTIARY API (Kaggle) Failed:', kaggleError);
-          // All three failed, throw to outermost catch
           throw new Error("All APIs failed.");
         }
       }
@@ -130,7 +122,7 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
   } catch (globalError) {
     console.error('CRITICAL ERROR: All API providers failed.', globalError);
     return NextResponse.json({ 
-      message: "Listen up junior, my brain has officially crashed mid-semester (all systems overloaded). Try again in a minute once I've had some coffee!" 
-    });
+      message: "Listen up junior, my brain has officially crashed mid-semester. Try again in a minute once I've had some coffee!" 
+    }, { status: 500 });
   }
 }
