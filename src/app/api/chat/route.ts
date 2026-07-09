@@ -45,13 +45,17 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
       ...messages
     ];
 
+    const groqKey = process.env.GROQ_X_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const kaggleKey = process.env.KAGGLE_API_KEY;
+
     // 2. Multi-API Fallback Logic (Strict Nested Try-Catch)
     try {
       // PRIMARY: Groq Cloud API
       const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+          'Authorization': `Bearer ${groqKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -62,7 +66,8 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
       });
       
       if (!groqRes.ok) {
-        throw new Error(`Groq API Error: HTTP ${groqRes.status}`);
+        const errorText = await groqRes.text();
+        throw new Error(`Groq API Error: HTTP ${groqRes.status} - ${errorText}`);
       }
       
       const data = await groqRes.json();
@@ -71,7 +76,7 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
       }
       return NextResponse.json({ message: data.choices[0].message.content });
 
-    } catch (groqError) {
+    } catch (groqError: any) {
       console.error('PRIMARY API (Groq) Failed:', groqError);
 
       try {
@@ -81,7 +86,7 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
           parts: [{ text: m.content }]
         }));
         
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
@@ -91,7 +96,8 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
         });
         
         if (!geminiRes.ok) {
-          throw new Error(`Gemini API Error: HTTP ${geminiRes.status}`);
+          const errorText = await geminiRes.text();
+          throw new Error(`Gemini API Error: HTTP ${geminiRes.status} - ${errorText}`);
         }
         
         const data = await geminiRes.json();
@@ -103,13 +109,13 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
         
         return NextResponse.json({ message: text });
 
-      } catch (geminiError) {
+      } catch (geminiError: any) {
         console.error('SECONDARY API (Gemini) Failed:', geminiError);
 
         try {
           // TERTIARY: Kaggle Models API (Simulated Fallback to prevent crash)
           // To guarantee the UI never crashes for the user when keys fail, we return a graceful fallback response.
-          const fallbackResponse = "Hmm, looks like my primary and secondary neurons are fried right now (all systems overloaded). But don't worry, as a senior I've seen worse! The official PDF data is loaded, but my AI engines need a quick breather. Try asking again in a few moments!";
+          const fallbackResponse = `Hmm, looks like my primary and secondary neurons are fried right now. Here is what they complained about:\n\nGroq: ${groqError.message}\nGemini: ${geminiError.message}\n\nPlease check your API keys or quotas!`;
           
           return NextResponse.json({ message: fallbackResponse });
 
