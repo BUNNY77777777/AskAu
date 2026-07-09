@@ -59,7 +59,7 @@ Remember your persona: polite, protective, helpful to juniors, but authentic to 
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama3-70b-8192',
+          model: 'llama-3.1-8b-instant',
           messages: groqMessages,
           temperature: 0.7,
         })
