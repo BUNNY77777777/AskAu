@@ -10,6 +10,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-cardinal: #C41E3A;
+  --color-cello: #2F4F7F;
+  --color-orchid: #DDA0DD;
 }
 
 @media (prefers-color-scheme: dark) {

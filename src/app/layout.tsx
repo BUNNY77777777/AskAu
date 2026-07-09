@@ -1,33 +1,24 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { ClerkProvider } from '@clerk/nextjs';
+import './globals.css';
+import { Inter } from 'next/font/google';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'] });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "AskAu - Anurag University AI",
-  description: "Your official Anurag University AI Assistant",
+export const metadata = {
+  title: 'AskAu | Official AI Assistant',
+  description: 'Anurag University AI Assistant built by Teknova',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={inter.className}>{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

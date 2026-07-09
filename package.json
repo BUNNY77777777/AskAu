@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.5.15",
+    "@google/generative-ai": "^0.24.1",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.23.0",
     "next": "16.2.10",
@@ -18,13 +20,24 @@
     "react-markdown": "^10.1.0"
   },
   "devDependencies": {
+    "@prisma/client": "^5.22.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "prisma": "^5.22.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.0",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "prisma@5.22.0": true,
+    "esbuild@0.28.1": true
   }
 }
