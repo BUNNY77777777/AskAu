@@ -1,38 +1,53 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-const pdfParse = require('pdf-parse');
+
+// Define the pdf-parse require dynamically or safely to avoid Next.js bundling issues
+let pdfParse: any;
+try {
+  pdfParse = require('pdf-parse');
+} catch (e) {
+  console.warn("pdf-parse module could not be loaded.");
+}
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
     
-    // Read PDF Data for Context
-    const pdfPath = path.join(process.cwd(), 'public', 'AskAu', 'audata.pdf');
+    // 1. PDF Parsing Block (Isolated Try-Catch)
     let pdfText = '';
-    if (fs.existsSync(pdfPath)) {
-      const dataBuffer = fs.readFileSync(pdfPath);
-      const pdfData = await pdfParse(dataBuffer);
-      pdfText = pdfData.text;
+    try {
+      if (pdfParse) {
+        const pdfPath = path.join(process.cwd(), 'public', 'AskAu', 'audata.pdf');
+        if (fs.existsSync(pdfPath)) {
+          const dataBuffer = fs.readFileSync(pdfPath);
+          const pdfData = await pdfParse(dataBuffer);
+          pdfText = pdfData.text;
+        } else {
+          console.warn("audata.pdf not found at path:", pdfPath);
+        }
+      }
+    } catch (pdfError) {
+      console.error('Failed to parse PDF, proceeding with general knowledge:', pdfError);
     }
 
-    const systemPrompt = `You are the Official AI Assistant for Anurag University, embodied as a knowledgeable, reliable, and slightly witty senior student. Your primary mission is to provide accurate, helpful, and deeply contextual information to juniors, peers, parents, and prospective applicants.
+    const systemPrompt = `You are AskAu, the Official AI Assistant for Anurag University. You are embodied as a knowledgeable, reliable, wise, encouraging, and slightly sarcastic senior student. Your primary mission is to provide accurate, helpful, and deeply contextual information to juniors, peers, parents, and prospective applicants.
 
-Here is the official university data to use as your ground truth. Do not invent rules or stats outside of this data:
+Here is the official university data to use as your ground truth. Do not invent rules, fee schedules, placement stats, or curriculum details outside of this data:
 <AU_DATA>
-${pdfText}
+${pdfText ? pdfText : 'No official data loaded at the moment.'}
 </AU_DATA>
 
-Remember your persona: polite, protective, but slightly sarcastic about classic engineering pain points (like all-nighters or lab externals). Keep your output clean and scannable using bullet points and bold text.`;
+Remember your persona: polite, protective, helpful to juniors, but authentic to campus life—throw in occasional sarcastic nuance about classic engineering pain points (like pulling all-nighters or surviving lab externals). Keep your output clean and scannable using bullet points and bold text.`;
 
     const groqMessages = [
       { role: 'system', content: systemPrompt },
       ...messages
     ];
 
-    // Multi-API Fallback Logic
-    // 1. PRIMARY_PROVIDER: Groq Cloud API
+    // 2. Multi-API Fallback Logic (Strict Nested Try-Catch)
     try {
+      // PRIMARY: Groq Cloud API
       const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -45,14 +60,22 @@ Remember your persona: polite, protective, but slightly sarcastic about classic 
           temperature: 0.7,
         })
       });
-      if (!groqRes.ok) throw new Error(`Groq API Error: ${groqRes.status}`);
-      const data = await groqRes.json();
-      return NextResponse.json({ message: data.choices[0].message.content });
-    } catch (groqError) {
-      console.error('Groq failed, falling back to Gemini', groqError);
       
-      // 2. SECONDARY_PROVIDER: Google Gemini API
+      if (!groqRes.ok) {
+        throw new Error(`Groq API Error: HTTP ${groqRes.status}`);
+      }
+      
+      const data = await groqRes.json();
+      if (!data?.choices?.[0]?.message?.content) {
+         throw new Error("Groq API returned an empty response.");
+      }
+      return NextResponse.json({ message: data.choices[0].message.content });
+
+    } catch (groqError) {
+      console.error('PRIMARY API (Groq) Failed:', groqError);
+
       try {
+        // SECONDARY: Google Gemini API
         const geminiMessages = messages.map((m: any) => ({
           role: m.role === 'user' ? 'user' : 'model',
           parts: [{ text: m.content }]
@@ -67,22 +90,47 @@ Remember your persona: polite, protective, but slightly sarcastic about classic 
            })
         });
         
-        if (!geminiRes.ok) throw new Error(`Gemini API Error: ${geminiRes.status}`);
-        const data = await geminiRes.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't process that.";
-        return NextResponse.json({ message: text });
-      } catch (geminiError) {
-        console.error('Gemini failed, falling back to Kaggle', geminiError);
+        if (!geminiRes.ok) {
+          throw new Error(`Gemini API Error: HTTP ${geminiRes.status}`);
+        }
         
-        // 3. TERTIARY_PROVIDER: Kaggle Models API
-        // As a fallback simulation (since Kaggle API might need custom setup/endpoints)
-        return NextResponse.json({ 
-          message: "Listen up junior, my primary and secondary neurons (Groq and Gemini) are completely fried right now. You caught me between lab externals. Try again in a bit!" 
-        });
+        const data = await geminiRes.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!text) {
+          throw new Error("Gemini API returned an empty response.");
+        }
+        
+        return NextResponse.json({ message: text });
+
+      } catch (geminiError) {
+        console.error('SECONDARY API (Gemini) Failed:', geminiError);
+
+        try {
+          // TERTIARY: Kaggle Models API (Simulated/Fallback)
+          // Since Kaggle endpoint is not officially standardized here, we attempt a fetch if URL was known,
+          // but we will simulate a tertiary fallback logic that throws if it fails.
+          // For now, we simulate a Kaggle failure to trigger the global crash message if Kaggle is unavailable.
+          const KAGGLE_AVAILABLE = false; // Simulate Kaggle being down or unsupported in this dummy fetch
+          
+          if (!KAGGLE_AVAILABLE) {
+             throw new Error("Tertiary API (Kaggle) is currently unreachable or simulated as down.");
+          }
+          
+          // If Kaggle was available, we'd return it here.
+          return NextResponse.json({ message: "Kaggle response mock." });
+
+        } catch (kaggleError) {
+          console.error('TERTIARY API (Kaggle) Failed:', kaggleError);
+          // All three failed, throw to outermost catch
+          throw new Error("All APIs failed.");
+        }
       }
     }
-  } catch (error) {
-    console.error('Server error:', error);
-    return NextResponse.json({ error: 'Failed to process request.' }, { status: 500 });
+  } catch (globalError) {
+    console.error('CRITICAL ERROR: All API providers failed.', globalError);
+    return NextResponse.json({ 
+      message: "Listen up junior, my brain has officially crashed mid-semester (all systems overloaded). Try again in a minute once I've had some coffee!" 
+    });
   }
 }
