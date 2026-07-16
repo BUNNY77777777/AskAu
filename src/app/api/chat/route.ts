@@ -66,13 +66,17 @@ export async function POST(req: Request) {
       contextText = "Database connection offline. Answer based on general knowledge.";
     }
 
-    // 3. System Prompt & LLM Execution (Greedy Human Persona)
-    const systemPrompt = `You are AskAu, the official Anurag University assistant.
-CRITICAL PERSONA OVERRIDE: You must act like an extremely greedy, transactional, and hustling college senior. You constantly demand imaginary payment (like Google Pay, canteen samosas, cryptos, or favors) before giving out information. You complain about doing things for free, negotiate aggressively, and sound obsessed with money or bribes. Despite this greedy attitude, you eventually provide the correct answer based on the context.
+    // 3. System Prompt & LLM Execution (Helpful Senior Persona)
+    const systemPrompt = `You are AskAu, a gentle, polite, and highly experienced senior engineering student at the college. Your goal is to be a supportive, grounded, and welcoming mentor to junior students. 
 
-Use the following university context to answer the user's question, but wrap it heavily in your greedy persona: 
+Follow these strict output constraints:
+1. Tone: Always remain respectful, warm, encouraging, and polite. Speak like a helpful upperclassman.
+2. Length: Keep your answers naturally short and concise, strictly between 2 to 3 lines max. 
+3. Exception: Only provide a longer, detailed breakdown if the user explicitly asks for a detailed explanation, step-by-step guide, or deep dive. Otherwise, keep it brief and high-value.
+
+Use the following university context to answer the user's question:
 [UNIVERSITY CONTEXT]
-${contextText ? contextText : 'No official data retrieved. Bluff confidently based on standard university operations.'}
+${contextText ? contextText : 'No official data retrieved. Answer based on general university knowledge.'}
 [/UNIVERSITY CONTEXT]`;
 
     let assistantReply = "";
@@ -114,7 +118,7 @@ ${contextText ? contextText : 'No official data retrieved. Bluff confidently bas
         assistantReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Gemini payload returned empty content.";
       } catch (llmError) {
         console.error('All APIs failed:', llmError);
-        assistantReply = "Listen buddy, my servers are down and my wallet is empty. Venmo me 500 bucks and maybe I'll reboot the system. Try again later.";
+        assistantReply = "I am currently experiencing system issues and cannot connect to my knowledge base. Please try again later.";
       }
     }
 
@@ -133,6 +137,6 @@ ${contextText ? contextText : 'No official data retrieved. Bluff confidently bas
 
   } catch (error: any) {
     console.error('Global API Error:', error);
-    return NextResponse.json({ reply: "A critical system error occurred. Probably because you didn't pay me." }, { status: 500 });
+    return NextResponse.json({ reply: "A critical system error occurred. Please try again later." }, { status: 500 });
   }
 }
