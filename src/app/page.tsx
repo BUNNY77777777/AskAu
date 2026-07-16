@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, GraduationCap, Loader2, Sparkles, MapPin, Building2, TerminalSquare } from 'lucide-react';
+import { Send, Loader2, Paperclip, Mic } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserButton } from '@clerk/nextjs';
 
@@ -48,43 +48,52 @@ export default function Home() {
     }
   };
 
+  // Helper function to auto-bold "Anurag University" in user text
+  const formatUserMessage = (text: string) => {
+    const parts = text.split(/(Anurag University)/i);
+    return parts.map((part, i) => 
+      part.toLowerCase() === 'anurag university' ? <strong key={i} className="font-bold">{part}</strong> : part
+    );
+  };
+
   return (
-    <main className="h-screen w-full text-white font-sans relative overflow-hidden flex flex-col bg-neutral-900">
-      {/* Clear Campus Background */}
+    <main className="h-screen w-full font-sans relative overflow-hidden flex flex-col bg-neutral-900">
+      {/* 1. Global Container & Blurred Background */}
       <div className="absolute inset-0 z-0">
         <div 
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-[60s] ease-linear scale-105"
+          className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url('/AskAu/aucampus.avif')" }}
         />
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-black/10 backdrop-blur-md" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 w-full shrink-0 p-4 md:p-6 flex justify-between items-center backdrop-blur-md bg-cello/90 border-b border-cardinal shadow-lg">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-2 shadow-lg shrink-0">
+      {/* 2. Header Component Redesign */}
+      <header className="relative z-10 w-full shrink-0 p-4 md:px-8 flex justify-between items-center bg-gradient-to-b from-gray-200/95 to-gray-200/40 backdrop-blur-sm border-b border-white/20">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center p-2 shadow-sm shrink-0">
             <img src="/AskAu/aulogo.png" alt="AU Logo" className="w-full h-full object-contain" />
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-white drop-shadow-sm">AskAu</h1>
-            <p className="text-[10px] md:text-xs font-bold flex items-center gap-1.5 uppercase tracking-widest mt-0.5 text-orchid">
-              <TerminalSquare className="w-3 h-3 text-cardinal" /> System Online
-            </p>
+          <div className="flex flex-col">
+            <h1 className="text-sm md:text-base font-bold text-[#0B1C4D] tracking-wide uppercase leading-tight">
+              Anurag University
+            </h1>
+            <div className="flex items-center gap-2">
+              <span className="text-xl md:text-2xl font-extrabold text-[#0B1C4D] tracking-tight">AskAu</span>
+              <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded-full bg-white/50 border border-[#4CAF50]/30 shadow-sm">
+                <div className="w-2 h-2 rounded-full bg-[#4CAF50] animate-pulse" />
+                <span className="text-[10px] font-bold text-[#4CAF50] uppercase tracking-wider">Online</span>
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex gap-3 shrink-0 mr-4">
-            <span className="px-3 md:px-4 py-1.5 rounded-full bg-black/40 border border-white/20 text-xs font-semibold text-white flex items-center gap-2 shadow-inner"><MapPin className="w-3.5 h-3.5 text-cardinal"/> Ghatkesar, Hyd</span>
-            <span className="px-3 md:px-4 py-1.5 rounded-full bg-black/40 border border-white/20 text-xs font-semibold text-white flex items-center gap-2 shadow-inner"><Building2 className="w-3.5 h-3.5 text-orchid"/> Engineering</span>
-          </div>
-          {/* Clerk User Profile */}
-          <div className="bg-black/20 rounded-full p-1 border border-white/10">
+          <div className="bg-white/80 rounded-full p-1 border border-[#0B1C4D]/10 shadow-sm">
             <UserButton />
           </div>
         </div>
       </header>
 
-      {/* Chat Messages Area */}
+      {/* 3. Chat Messages Area */}
       <div className="flex-1 w-full max-w-4xl mx-auto relative z-10 flex flex-col p-4 md:p-6 overflow-y-auto custom-scrollbar">
         <AnimatePresence>
           {messages.map((m, idx) => (
@@ -95,23 +104,24 @@ export default function Home() {
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
               className={`flex w-full mb-6 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[90%] md:max-w-[75%] rounded-3xl p-5 md:p-6 shadow-2xl ${
-                m.role === 'user' 
-                  ? 'bg-cello text-white rounded-br-sm border border-cello/50' 
-                  : 'bg-black/80 text-white rounded-bl-sm border border-white/10 backdrop-blur-sm'
-              }`}>
-                {m.role === 'assistant' && (
-                  <div className="flex items-center gap-2 mb-4 border-b border-white/20 pb-3">
-                    <div className="bg-cardinal/20 p-1.5 rounded-lg border border-cardinal/30">
-                      <GraduationCap className="w-4 h-4 text-cardinal" />
-                    </div>
-                    <span className="text-[10px] md:text-xs font-bold text-orchid uppercase tracking-widest">AU Senior</span>
+              {m.role === 'assistant' ? (
+                <div className="flex gap-3 max-w-[90%] md:max-w-[80%] items-end">
+                  <div className="w-8 h-8 rounded-full bg-white shrink-0 shadow-md border border-gray-200 overflow-hidden flex items-center justify-center p-1 mb-1">
+                    <img src="/AskAu/aulogo.png" alt="AU Logo" className="w-full h-full object-contain" />
                   </div>
-                )}
-                <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-p:text-sm md:prose-p:text-[15px] prose-li:text-sm md:prose-li:text-[15px] prose-pre:bg-black/60 prose-pre:border prose-pre:border-white/20 prose-strong:text-orchid">
-                  <ReactMarkdown>{m.content}</ReactMarkdown>
+                  <div className="bg-[#A01D38] text-white rounded-[20px] rounded-bl-sm p-4 md:p-5 shadow-lg border border-[#A01D38]/80">
+                    <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-p:text-[15px] prose-li:text-[15px]">
+                      <ReactMarkdown>{m.content}</ReactMarkdown>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-[#F5F5F5] text-[#0B1C4D] rounded-[15px] rounded-br-sm p-4 md:p-5 shadow-[0_4px_10px_rgba(0,0,0,0.1)] max-w-[90%] md:max-w-[75%] border border-gray-200">
+                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+                    {formatUserMessage(m.content)}
+                  </p>
+                </div>
+              )}
             </motion.div>
           ))}
           {isLoading && (
@@ -120,9 +130,14 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               className="flex justify-start w-full mb-6"
             >
-              <div className="bg-black/80 border border-white/10 text-white rounded-3xl rounded-bl-sm p-5 shadow-2xl flex items-center gap-4 backdrop-blur-sm">
-                <Loader2 className="w-5 h-5 animate-spin text-cardinal" />
-                <span className="text-sm font-medium animate-pulse text-orchid">Rifling through the official docs...</span>
+              <div className="flex gap-3 max-w-[80%] items-end">
+                <div className="w-8 h-8 rounded-full bg-white shrink-0 shadow-md border border-gray-200 overflow-hidden flex items-center justify-center p-1 mb-1">
+                  <img src="/AskAu/aulogo.png" alt="AU" className="w-full h-full object-contain grayscale opacity-50" />
+                </div>
+                <div className="bg-white/90 border border-gray-200 text-[#0B1C4D] rounded-[20px] rounded-bl-sm p-4 shadow-lg flex items-center gap-3 backdrop-blur-sm">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#A01D38]" />
+                  <span className="text-sm font-medium animate-pulse">Typing...</span>
+                </div>
               </div>
             </motion.div>
           )}
@@ -130,41 +145,55 @@ export default function Home() {
         <div ref={messagesEndRef} className="h-4 shrink-0" />
       </div>
 
-      {/* Input Area */}
-      <div className="w-full shrink-0 z-20 bg-white/5 backdrop-blur-xl border-t border-cardinal p-4 md:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-        <div className="max-w-4xl mx-auto w-full relative group">
+      {/* 4. Composite Chat Input Pill & Footer */}
+      <div className="w-full shrink-0 z-20 pb-6 pt-2 px-4 relative">
+        <div className="max-w-3xl mx-auto w-full relative">
           <form 
             onSubmit={handleSubmit}
-            className="relative bg-cello/90 border border-cardinal/50 rounded-3xl flex items-center p-2 shadow-2xl transition-all focus-within:border-cardinal focus-within:bg-cello"
+            className="relative bg-[#F5F5F5] rounded-[50px] flex items-center p-2 shadow-[0_10px_40px_rgba(0,0,0,0.15)] transition-all border border-gray-300 focus-within:border-[#0B1C4D]/50 focus-within:shadow-[0_10px_40px_rgba(11,28,77,0.2)]"
           >
+            <button type="button" className="p-3 text-[#0B1C4D] hover:text-[#A01D38] transition-colors shrink-0">
+              <Paperclip className="w-5 h-5" />
+            </button>
+            
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about AIML curriculum, mess food, or campus fests..."
-              className="flex-1 bg-transparent border-none text-white placeholder-white/50 px-4 md:px-6 py-3 md:py-4 outline-none text-sm md:text-base font-semibold w-full focus:ring-0"
+              placeholder="Ask me about campus life, academics, or events..."
+              className="flex-1 bg-transparent border-none text-[#0B1C4D] placeholder-[#0B1C4D]/40 px-2 py-3 outline-none text-[15px] font-medium w-full focus:ring-0"
               disabled={isLoading}
             />
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="bg-cardinal hover:bg-[#A31830] text-white rounded-2xl p-3 md:p-4 transition-all disabled:opacity-50 disabled:hover:bg-cardinal flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(196,30,58,0.4)] hover:scale-105 active:scale-95"
-            >
-              <Send className="w-5 h-5" />
-            </button>
+            
+            <div className="flex items-center gap-1 shrink-0 pr-1">
+              <button type="button" className="p-3 text-[#0B1C4D] hover:text-[#A01D38] transition-colors">
+                <Mic className="w-5 h-5" />
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                className="bg-[#0B1C4D] hover:bg-[#152c6a] text-white rounded-full p-3.5 transition-all disabled:opacity-50 disabled:hover:bg-[#0B1C4D] flex items-center justify-center shadow-md hover:scale-105 active:scale-95 ml-1"
+              >
+                <Send className="w-5 h-5 ml-0.5" />
+              </button>
+            </div>
           </form>
-          <p className="text-center text-[10px] md:text-xs text-white/50 mt-3 font-bold tracking-wide flex items-center justify-center gap-2 drop-shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-orchid" /> Powered by Groq, Gemini & Supabase Vector DB
+        </div>
+        
+        {/* 5. Footer */}
+        <div className="absolute bottom-2 right-4 md:right-6">
+          <p className="text-[10px] font-semibold text-[#0B1C4D]/60 tracking-wider">
+            Designed by AskAu Team
           </p>
         </div>
       </div>
 
       {/* Global Styles for Scrollbar */}
       <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #2F4F7F; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #354D73; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(11, 28, 77, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(11, 28, 77, 0.4); }
       `}} />
     </main>
   );
