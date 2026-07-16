@@ -17,6 +17,8 @@ export default function SignUpPage() {
         </div>
         <div className="w-full">
           <SignUp 
+            fallbackRedirectUrl="/"
+            forceRedirectUrl="/"
             appearance={{
               elements: {
                 rootBox: "w-full shadow-[0_10px_40px_-10px_rgba(0,0,0,0.7)] rounded-3xl",
