@@ -33,6 +33,9 @@ export async function POST(req: Request) {
     let chat;
     let contextText = '';
 
+    const cleanMessage = latestMessage.trim().toLowerCase();
+    const isCasual = /^(hi|hello|hey|yo|sup|good\s*morning|good\s*afternoon|good\s*evening|how\s*are\s*you|whats\s*up)/i.test(cleanMessage);
+
     // 2. Graceful DB Handling
     try {
       chat = await prisma.chat.findFirst({
@@ -47,7 +50,9 @@ export async function POST(req: Request) {
         data: { chatId: chat.id, role: 'user', content: latestMessage }
       });
 
-      if (process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY.includes('PLACEHOLDER')) {
+      if (isCasual) {
+        contextText = "User initiated casual small talk. Respond politely and briefly without querying university data.";
+      } else if (process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY.includes('PLACEHOLDER')) {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const embeddingModel = genAI.getGenerativeModel({ model: 'text-embedding-004' });
         const result = await embeddingModel.embedContent(latestMessage);
