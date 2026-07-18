@@ -9,6 +9,11 @@ const prisma = globalForPrisma.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export async function POST(req: Request) {
+  if (!process.env.GROQ_API_KEY || !process.env.GEMINI_API_KEY) {
+    console.error('Server Configuration Error: Missing API Keys');
+    return NextResponse.json({ reply: "Server Configuration Error: Missing API Keys" }, { status: 500 });
+  }
+
   try {
     // 1. Safe Authentication (Bypasses Clerk if local placeholder keys are present to prevent 500 crash)
     let userId = 'local-dev-user';
@@ -87,7 +92,7 @@ ${contextText ? contextText : 'No official data retrieved. Answer based on gener
     let assistantReply = "";
     
     try {
-      const groqKey = process.env.GROQ_API_KEY || "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";
+      const groqKey = process.env.GROQ_API_KEY;
       const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${groqKey}`, 'Content-Type': 'application/json' },
@@ -106,7 +111,7 @@ ${contextText ? contextText : 'No official data retrieved. Answer based on gener
     } catch (groqErr) {
       console.warn('Groq fetch failed, falling back to Gemini:', groqErr);
       try {
-        const geminiKey = process.env.GEMINI_API_KEY || "AQ.Ab8RN6KksrmAVNOjZ4gx-eMKT2xV3EO6Dcy-_iKHWfX65JrQ_Q";
+        const geminiKey = process.env.GEMINI_API_KEY;
         const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
